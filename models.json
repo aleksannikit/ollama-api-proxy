@@ -23,8 +23,23 @@
         "provider": "openrouter",
         "model": "deepseek/deepseek-r1-0528:free"
     },
-        "kimi-k2": {
+    "kimi-k2": {
         "provider": "openrouter",
         "model": "moonshotai/kimi-k2:free"
+    },
+    "text-embedding-004": {
+        "provider": "google",
+        "model": "text-embedding-004",
+        "type": "embedding"
+    },
+    "text-embedding-001": {
+        "provider": "google",
+        "model": "text-embedding-001",
+        "type": "embedding"
+    },
+    "qwen-embedding": {
+        "provider": "google",
+        "model": "text-embedding-004",
+        "type": "embedding"
     }
 }
