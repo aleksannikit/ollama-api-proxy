@@ -22,10 +22,14 @@ environment variables.
     - OpenAI models
     - Google Gemini models
   - OpenRouter models
+- Support for embedding models:
+    - Google embedding models (text-embedding-004, text-embedding-001)
+    - Proxy Ollama embedding models to Google's embedding API
 - Compatible with Ollama API endpoints:
     - `/api/chat` - for chat completions
     - `/api/generate` - for text generation
-    - `/api/tags` - for listing available models
+    - `/api/embeddings` - for text embeddings
+    - `/api/tags` - for listing available models (including embedding models)
     - `/api/version` - for version information
 
 ## Supported Models
@@ -48,12 +52,17 @@ are:
 
 - deepseek-r1
 
+### Google Embedding Models
+
+- text-embedding-004
+- text-embedding-001
+
 ## Customizing Models
 
 You can customize the available models by creating a `models.json` file in the directory where you run the proxy server.
 This file should contain a JSON object where keys are the model names you want to expose, and values are objects
-specifying the `provider` (e.g., `openai`, `google`, `openrouter`) and the actual `model` name as expected by the
-respective API.
+specifying the `provider` (e.g., `openai`, `google`, `openrouter`), the actual `model` name as expected by the
+respective API, and the `type` (either `chat` or `embedding`).
 
 If a `models.json` file is found in the current working directory, the proxy will load models from it. Otherwise, it
 will use the built-in default models.
@@ -62,13 +71,20 @@ will use the built-in default models.
 
 ```json
 {
-    "my-custom-gpt": { "provider": "openai", "model": "gpt-4o-mini" },
-    "my-gemini-pro": { "provider": "google", "model": "gemini-pro" },
-    "my-openrouter-model": { "provider": "openrouter", "model": "mistralai/mistral-7b-instruct-v0.2" }
+    "my-custom-gpt": { "provider": "openai", "model": "gpt-4o-mini", "type": "chat" },
+    "my-gemini-pro": { "provider": "google", "model": "gemini-pro", "type": "chat" },
+    "my-openrouter-model": { "provider": "openrouter", "model": "mistralai/mistral-7b-instruct-v0.2", "type": "chat" },
+    "qwen-embedding": { "provider": "google", "model": "text-embedding-004", "type": "embedding" },
+    "my-embedding": { "provider": "google", "model": "text-embedding-001", "type": "embedding" }
 }
 ```
 
-This allows you to rename models, add new ones supported by the providers, or remove models you don't intend to use.
+### Model Types
+
+- **Chat models** (`type: "chat"`): Used for conversational AI and text generation via `/api/chat` and `/api/generate` endpoints
+- **Embedding models** (`type: "embedding"`): Used for generating text embeddings via `/api/embeddings` endpoint
+
+This allows you to rename models, add new ones supported by the providers, or remove models you don't intend to use. You can also proxy Ollama embedding models (like Qwen/Qwen3-Embedding-4B-GGUF) to Google's embedding API by configuring them with `provider: "google"` and `type: "embedding"`.
 
 ## Installation
 
@@ -157,7 +173,7 @@ The proxy server is configured using environment variables:
 
 - `PORT`: The port on which the server will run (default: 11434)
 - `OPENAI_API_KEY`: Your OpenAI API key (required for OpenAI models)
-- `GEMINI_API_KEY`: Your Google Gemini API key (required for Gemini models)
+- `GEMINI_API_KEY`: Your Google Gemini API key (required for Gemini models and embedding models)
 - `OPENROUTER_API_KEY`: Your OpenRouter API key (required for OpenRouter models)
 - `NODE_ENV`: Set to `production` for production use or `development` for development
 
@@ -169,6 +185,37 @@ You can set these variables in a `.env` file in the project root.
 2. Configure JetBrains AI Assistant to use Ollama
 3. Set the Ollama server URL to `http://localhost:11434`
 4. Select one of the available models (e.g., `gpt-4o`, `gemini-2.5-flash`, `deepseek-r1`)
+
+## Using Embeddings
+
+The proxy server supports text embeddings through the `/api/embeddings` endpoint, compatible with Ollama's embedding API format.
+
+### Example Usage
+
+```bash
+# Single text embedding
+curl -X POST http://localhost:11434/api/embeddings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "text-embedding-004",
+    "prompt": "Hello, world!"
+  }'
+
+# Multiple text embeddings
+curl -X POST http://localhost:11434/api/embeddings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "text-embedding-004",
+    "input": ["Hello, world!", "How are you?"]
+  }'
+```
+
+### Supported Input Formats
+
+- **Single prompt**: `{"model": "model-name", "prompt": "text"}`
+- **Multiple inputs**: `{"model": "model-name", "input": ["text1", "text2"]}`
+
+The response format matches Ollama's embedding API, returning vectors with 768 dimensions for Google embedding models.
 
 ## Development
 
